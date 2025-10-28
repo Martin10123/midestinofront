@@ -53,7 +53,23 @@ export const PlanesEmpresaProvider = ({ children }) => {
     obtenerTodosPlanes();
   }, [usuarioActivo.idEmpresa]);
 
-  const onEnviarValoracion = async (puntuacion, planEmpresa) => {
+  const fetchPlanes = async () => {
+    try {
+      if (usuarioActivo.idEmpresa) {
+        const response = await axios.get(
+          `${urlGeneral}/planes/empresa/${usuarioActivo.idEmpresa}`
+        );
+        if (response.data.valid) setPlanesEmpresa(response.data.planesList);
+      } else {
+        const response = await axios.get(`${urlGeneral}/planes/todos`);
+        if (response.data.valid) setPlanesEmpresas(response.data.planesList);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onEnviarValoracion = async (puntuacion, planEmpresa, comentario = null) => {
     try {
       const response = await axios.post(
         `${urlGeneral}/planes/${planEmpresa.id}/valoracion`,
@@ -65,19 +81,19 @@ export const PlanesEmpresaProvider = ({ children }) => {
                 ? usuarioActivo.idCliente
                 : usuarioActivo.idEmpresa,
             puntuacion,
+            comentario,
           },
         }
       );
 
-      if (response.data === "Valoración añadida exitosamente") {
-        const updatedPlanes = planesEmpresas.map((plan) =>
-          plan.id === planEmpresa.id
-            ? { ...plan, valoracionPromedio: puntuacion }
-            : plan
-        );
-
-        setPlanesEmpresas(updatedPlanes);
-
+      // backend responde con texto en el body; aceptamos tanto string como ResponseEntity
+      const data = response.data;
+      if (
+        data === "Valoración añadida exitosamente" ||
+        (data && data.includes && data.includes("Valoración añadida"))
+      ) {
+        // refrescar la lista de planes para obtener el promedio actualizado
+        await fetchPlanes();
         toast.success("Valoración añadida exitosamente");
       } else {
         toast.error("Ocurrió un error al agregar la valoración");
