@@ -4,7 +4,7 @@ import { PlanesEmpresaContext } from "./../context/PlanesEmpresaContext";
 import { TarjetaPlanes } from "./../components/TarjetaPlanes";
 
 export const ClientePagina = () => {
-  const { planesEmpresas, onEnviarValoracion, setPlanesEmpresa } =
+  const { planesEmpresas, setPlanesEmpresa } =
     useContext(PlanesEmpresaContext);
 
   // Estados para los filtros
@@ -77,7 +77,6 @@ export const ClientePagina = () => {
             <TarjetaPlanes
               key={plan.id}
               planEmpresa={plan}
-              onEnviarValoracion={onEnviarValoracion}
               setPlanesEmpresa={setPlanesEmpresa}
             />
           ))}

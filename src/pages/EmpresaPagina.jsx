@@ -4,7 +4,7 @@ import { useContext } from "react";
 import { PlanesEmpresaContext } from "../context/PlanesEmpresaContext";
 
 export const EmpresaPagina = () => {
-  const { planesEmpresa, setPlanesEmpresa, onEnviarValoracion } =
+  const { planesEmpresa, setPlanesEmpresa } =
     useContext(PlanesEmpresaContext);
 
   return (
@@ -16,7 +16,6 @@ export const EmpresaPagina = () => {
               key={planEmpresa.id}
               planEmpresa={planEmpresa}
               setPlanesEmpresa={setPlanesEmpresa}
-              onEnviarValoracion={onEnviarValoracion}
             />
           ))}
         </div>

@@ -8,6 +8,7 @@ import { useTablaAdministrador } from "./useTablaAdministrador";
 import { useTarjetaCompraPlanCliente } from "./useTarjetaCompraPlanCliente";
 import { useTarjetaPlanes } from "./useTarjetaPlanes";
 import { useTotalPlanes } from "./useTotalPlanes";
+import { useModalResenas } from "./useModalResenas";
 
 export {
   useRegistroEmpresa,
@@ -20,4 +21,5 @@ export {
   useTarjetaPlanes,
   useTotalPlanes,
   usePerfilUsuario,
+  useModalResenas,
 };

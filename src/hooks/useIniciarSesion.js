@@ -37,13 +37,25 @@ export const useIniciarSesion = () => {
         });
 
         if (response.data.empresa) {
-          localStorage.setItem(
-            "usuarioActivo",
-            JSON.stringify(response.data.empresa)
+          const empresa = response.data.empresa;
+
+          const posibleGanancias =
+            empresa.ganancias ?? empresa.ganancia ?? empresa.ganancias_empresa ??
+            empresa.gananciasApp ?? empresa.gananciasTotal ?? 0;
+
+          const gananciasNumber = Number(
+            String(posibleGanancias).replace(/[^0-9.-]+/g, "")
           );
 
-          setUsuarioActivo(response.data.empresa);
+          const empresaNormalized = {
+            ...empresa,
+            ganancias: isFinite(gananciasNumber) ? gananciasNumber : 0,
+          };
+
+          localStorage.setItem("usuarioActivo", JSON.stringify(empresaNormalized));
+          setUsuarioActivo(empresaNormalized);
           setIsUsuarioActivo(true);
+
         }
 
         navigate("/inicio-empresas");
