@@ -20,6 +20,7 @@ import instagram from "./igIcon.svg";
 import facebook from "./faceIcon.svg";
 import whatsapp from "./whatsappIcon.svg";
 import correo from "./gmailIcon.svg";
+import notfound from "./notfound.png";
 
 export {
   empresa,
@@ -44,4 +45,5 @@ export {
   facebook,
   whatsapp,
   correo,
+  notfound,
 };

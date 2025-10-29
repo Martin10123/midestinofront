@@ -3,6 +3,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { urlGeneral } from "../helpers/apiUrls";
 import { useNavigate } from "react-router-dom";
+import { formatearAMonedaColombia } from "../helpers/herramientas";
 
 export const useTotalPlanes = ({
   carritoCompras,
@@ -12,6 +13,7 @@ export const useTotalPlanes = ({
 }) => {
   const [nombrePlan, setNombrePlan] = useState("");
   const [cantidadPersonas, setCantidadPersonas] = useState(1);
+  const [comprando, setComprando] = useState(false);
   const navigate = useNavigate();
 
   // Calcular el precio original sin usar reduce
@@ -42,16 +44,38 @@ export const useTotalPlanes = ({
   const presupuestoEsSuficiente = usuarioActivo.presupuesto < precioFinal;
 
   const onComprarPlanes = async () => {
+    if (comprando) return; // Evitar múltiples clics
+
+    setComprando(true);
+    
     try {
+      // Validación 1: Carrito vacío
       if (carritoCompras.length === 0) {
-        // Verificar que el carrito de compras no esté vacío
-        toast.error("No hay planes en el carrito de compras.");
+        toast.error("❌ Tu carrito está vacío. Agrega planes antes de comprar.", {
+          duration: 4000,
+          icon: '🛒',
+        });
+        setComprando(false);
         return;
       }
 
-      if (nombrePlan.trim().length < 5) {
-        // Verificar que el nombre de la compra tenga al menos 5 caracteres
-        toast.error("El nombre de la compra debe tener al menos 5 caracteres.");
+      // Validación 2: Nombre del plan
+      if (!nombrePlan || nombrePlan.trim().length < 5) {
+        toast.error("📝 Por favor, ingresa un nombre para tu plan (mínimo 5 caracteres).", {
+          duration: 4000,
+          icon: '✏️',
+        });
+        setComprando(false);
+        return;
+      }
+
+      // Validación 3: Cantidad de personas
+      if (!cantidadPersonas || cantidadPersonas < 1) {
+        toast.error("👥 La cantidad de personas debe ser al menos 1.", {
+          duration: 4000,
+          icon: '⚠️',
+        });
+        setComprando(false);
         return;
       }
 
@@ -61,38 +85,51 @@ export const useTotalPlanes = ({
 
       const maxPersonasDisponibles = Math.max(...cantidadPersonasDisponibles);
 
-      if (cantidadPersonas < 1) {
-        // Verificar que la cantidad de personas sea mayor a 0
-        toast.error("La cantidad de personas debe ser mayor a 0.");
-        return;
-      }
-
+      // Validación 4: Exceso de personas
       if (cantidadPersonas > maxPersonasDisponibles) {
-        // Verificar que la cantidad de personas no sea mayor al máximo disponible
         toast.error(
-          `La cantidad de personas no debe ser mayor a ${maxPersonasDisponibles} según los planes seleccionados.`
+          `👥 La cantidad de personas no puede ser mayor a ${maxPersonasDisponibles} según los planes seleccionados.\n\nPor favor, reduce el número de personas o elige planes con mayor capacidad.`,
+          {
+            duration: 5000,
+            icon: '⚠️',
+          }
         );
+        setComprando(false);
         return;
       }
 
+      // Validación 5: Presupuesto insuficiente
       if (presupuestoEsSuficiente) {
-        // Verificar si el presupuesto del usuario es suficiente
         toast.error(
-          "Tu presupuesto no es suficiente para completar la compra."
+          `💰 Presupuesto insuficiente.\n\nTotal a pagar: ${formatearAMonedaColombia(precioFinal)}\nTu presupuesto: ${formatearAMonedaColombia(usuarioActivo.presupuesto)}\n\nPor favor, actualiza tu presupuesto o reduce los planes en tu carrito.`,
+          {
+            duration: 6000,
+            icon: '💳',
+          }
         );
+        setComprando(false);
         return;
       }
 
+      // Validación 6: Disponibilidad de planes
       for (let i = 0; i < carritoCompras.length; i++) {
         const compra = carritoCompras[i];
 
         if (compra.cantidad > compra.planEmpresa.cantidadDisponible) {
           toast.error(
-            `La cantidad de ${compra.planEmpresa.nombre} no puede ser mayor a la cantidad de planes disponibles. Hay solo ${compra.planEmpresa.cantidadDisponible} disponibles.`
+            `⚠️ Stock insuficiente para "${compra.planEmpresa.nombre}".\n\nCantidad solicitada: ${compra.cantidad}\nDisponible: ${compra.planEmpresa.cantidadDisponible}\n\nPor favor, ajusta la cantidad en tu carrito.`,
+            {
+              duration: 5000,
+              icon: '📦',
+            }
           );
-          return; // Detener la compra si alguna cantidad es inválida
+          setComprando(false);
+          return;
         }
       }
+
+      // Mostrar toast de procesamiento
+      toast.loading("Procesando tu compra...", { id: "comprando" });
 
       const response = await axios.post(`${urlGeneral}/compras/agregar`, {
         nombrePlan,
@@ -123,7 +160,13 @@ export const useTotalPlanes = ({
       });
 
       if (response.data.valid) {
-        toast.success("Compra realizada con éxito!");
+        // Dismiss loading toast
+        toast.dismiss("comprando");
+        
+        // Mostrar animación de éxito
+        toast.success("🎉 ¡Compra realizada con éxito!\n\nTus planes han sido confirmados.", {
+          duration: 3000,
+        });
 
         const usuarioActualizado = {
           ...usuarioActivo,
@@ -139,11 +182,24 @@ export const useTotalPlanes = ({
         );
 
         setCarritoCompras([]);
-        navigate("/planes-comprados-clientes");
+        
+        // Esperar un poco antes de navegar para que el usuario vea el mensaje
+        setTimeout(() => {
+          setComprando(false);
+          navigate("/planes-comprados-clientes");
+        }, 2000);
+      } else {
+        toast.dismiss("comprando");
+        setComprando(false);
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.response.data.message);
+      toast.dismiss("comprando");
+      const mensajeError = error.response?.data?.message || "Ocurrió un error al procesar tu compra. Por favor, inténtalo nuevamente.";
+      toast.error(`❌ ${mensajeError}`, {
+        duration: 5000,
+      });
+      setComprando(false);
     }
   };
 
@@ -159,5 +215,6 @@ export const useTotalPlanes = ({
     envio,
     cantidadPersonas,
     setCantidadPersonas,
+    comprando,
   };
 };

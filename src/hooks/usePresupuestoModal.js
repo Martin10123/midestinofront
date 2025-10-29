@@ -13,7 +13,18 @@ export const usePresupuestoModal = ({ handleOpenModalPresuento }) => {
 
   const onGuardarPresupuesto = async () => {
     if (presupuesto <= 0) {
-      toast.error("El presupuesto no puede ser negativo");
+      toast.error("💰 El presupuesto debe ser mayor a $0", {
+        duration: 4000,
+        icon: '⚠️',
+      });
+      return;
+    }
+
+    if (presupuesto === usuarioActivo.presupuesto) {
+      toast.error("📝 No has realizado ningún cambio en el presupuesto", {
+        duration: 3000,
+        icon: 'ℹ️',
+      });
       return;
     }
 
@@ -36,7 +47,10 @@ export const usePresupuestoModal = ({ handleOpenModalPresuento }) => {
           JSON.stringify(response.data.cliente)
         );
 
-        toast.success("Presupuesto actualizado correctamente");
+        toast.success("✅ Presupuesto actualizado correctamente", {
+          duration: 4000,
+          icon: '💰',
+        });
 
         handleOpenModalPresuento();
       }
@@ -44,7 +58,10 @@ export const usePresupuestoModal = ({ handleOpenModalPresuento }) => {
       console.log(error);
 
       toast.error(
-        "Ocurrió un error al actualizar el presupuesto" + error.response.data
+        `❌ Ocurrió un error al actualizar el presupuesto: ${error.response?.data || error.message}`,
+        {
+          duration: 5000,
+        }
       );
     }
   };
@@ -53,5 +70,6 @@ export const usePresupuestoModal = ({ handleOpenModalPresuento }) => {
     presupuesto,
     setPresupuesto,
     onGuardarPresupuesto,
+    usuarioActivo,
   };
 };
