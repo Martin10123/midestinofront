@@ -18,12 +18,27 @@ export const PlanesSeleccionadosCliente = () => {
     const obtenerCarritoCompras = async () => {
       try {
         const response = await axios.get(
-          `${urlGeneral}/carritos/cliente/${usuarioActivo.idCliente}`
+          `${urlGeneral}/carritos/cliente/${usuarioActivo.idCliente}`,
+          {
+            validateStatus: (status) =>
+              (status >= 200 && status < 300) || status === 404,
+          }
         );
 
-        setCarritoCompras(response.data.carritosList);
+        if (response.status === 404) {
+          setCarritoCompras([]);
+          return;
+        }
+
+        const carritos =
+          response.data.carritosList ??
+          response.data.data ??
+          response.data.carritoPlanList ??
+          [];
+
+        setCarritoCompras(Array.isArray(carritos) ? carritos : []);
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     };
 

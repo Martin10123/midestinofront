@@ -23,9 +23,14 @@ export const PlanesComprados = () => {
           `${urlGeneral}/compras/cliente/${usuarioActivo.idCliente}`
         );
 
-        setPlanesComprados(response.data.compraPlanList);
+        setPlanesComprados(response.data.compraPlanList ?? []);
       } catch (error) {
-        console.log(error);
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          setPlanesComprados([]);
+          return;
+        }
+
+        console.error(error);
       }
     };
 

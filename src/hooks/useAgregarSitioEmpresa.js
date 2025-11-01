@@ -4,16 +4,18 @@ import toast from "react-hot-toast";
 import { urlGeneral } from "../helpers/apiUrls";
 import { useForm } from "./useForm";
 import { PlanesEmpresaContext } from "../context/PlanesEmpresaContext";
+import { UsuarioContext } from "../context/UsuarioContext";
 
 export const useAgregarSitioEmpresa = ({
   editData,
   handleAbrirModalCrearActividad,
 }) => {
   const { setPlanesEmpresa } = useContext(PlanesEmpresaContext);
+  const { usuarioActivo } = useContext(UsuarioContext);
   const { formState, onInputChange } = useForm({
     imagen: null,
     nombre: editData ? editData.nombre : "",
-    tipoSitio: editData ? editData.tipoSitio : "",
+    tipoSitio: editData ? editData.tipoSitio : "Restaurante",
     direccion: editData ? editData.direccion : "",
     horario: editData ? editData.horario : "9:00 AM - 10:00 PM",
     email: editData ? editData.email : "",
@@ -64,11 +66,11 @@ export const useAgregarSitioEmpresa = ({
       return false;
     }
     if (!formState.pais) {
-      toast.error("el pais es obligatorio");
+      toast.error("El país es obligatorio");
       return false;
     }
     if (!formState.metodosPagoAceptados) {
-      toast.error("el metodo de pago es obligatorio");
+      toast.error("El método de pago es obligatorio");
       return false;
     }
     if (!formState.cantidad) {
@@ -101,7 +103,22 @@ export const useAgregarSitioEmpresa = ({
       return;
     }
 
-    const empresaActiva = JSON.parse(localStorage.getItem("usuarioActivo"));
+    const empresaActiva =
+      (usuarioActivo && Object.keys(usuarioActivo).length > 0
+        ? usuarioActivo
+        : null) ||
+      JSON.parse(localStorage.getItem("usuarioActivo")) ||
+      {};
+
+    const empresaId =
+      empresaActiva.idEmpresa ?? empresaActiva.id ?? empresaActiva.empresaId;
+
+    if (!empresaId) {
+      toast.error(
+        "No fue posible identificar la empresa activa. Inicia sesión nuevamente."
+      );
+      return;
+    }
 
     const formData = new FormData();
     formData.append("imagen", formState.imagen);
@@ -119,7 +136,7 @@ export const useAgregarSitioEmpresa = ({
       cantidadDisponible: formState.cantidad,
       informacionGeneral: formState.informacionGeneral,
       personasDisponibles: formState.personasDisponibles,
-      empresaId: empresaActiva.idEmpresa,
+      empresaId,
       fechaRegistro: formatearFecha(),
     };
 
@@ -160,23 +177,38 @@ export const useAgregarSitioEmpresa = ({
             : "Actividad creada correctamente."
         );
 
-        setPlanesEmpresa((planes) => {
-          if (editData) {
-            return planes.map((plan) =>
-              plan.id === editData.id ? response.data.planEmpresa : plan
-            );
-          } else {
-            return [...planes, response.data.planEmpresa];
+        const planRespuesta =
+          response.data.planEmpresa ??
+          response.data.plan ??
+          response.data.planGuardado ??
+          response.data.planEmpresaGuardada ??
+          response.data.data;
+
+        if (editData) {
+          setPlanesEmpresa((planes) =>
+            planRespuesta
+              ? planes.map((plan) =>
+                  plan.id === editData.id ? planRespuesta : plan
+                )
+              : planes
+          );
+        } else {
+          if (planRespuesta) {
+            setPlanesEmpresa((planes) => [...planes, planRespuesta]);
+          } else if (Array.isArray(response.data.planesList)) {
+            setPlanesEmpresa(response.data.planesList);
           }
-        });
+        }
 
         handleAbrirModalCrearActividad();
       }
     } catch (error) {
       console.log("Error al enviar el formulario:", error);
-      toast.error(
-        "Error al enviar el formulario. Inténtalo de nuevo. " + error.message
-      );
+      const mensajeError =
+        (error.response && error.response.data && error.response.data.message) ||
+        error.message ||
+        "Error al enviar el formulario. Inténtalo de nuevo.";
+      toast.error(mensajeError);
     }
   };
 

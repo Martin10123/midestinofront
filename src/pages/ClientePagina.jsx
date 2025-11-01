@@ -11,12 +11,22 @@ export const ClientePagina = () => {
   const [nombreFiltro, setNombreFiltro] = useState("");
   const [paisFiltro, setPaisFiltro] = useState("");
 
+  const normalizarTexto = (valor = "") =>
+    valor
+      .toString()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+
   // Filtrar planes en función de los filtros
   const planesFiltrados = planesEmpresas.filter((plan) => {
-    const coincideNombre = plan.nombre
-      .toLowerCase()
-      .includes(nombreFiltro.toLowerCase());
-    const coincidePais = paisFiltro ? plan.pais === paisFiltro : true;
+    const coincideNombre = normalizarTexto(plan.nombre).includes(
+      normalizarTexto(nombreFiltro)
+    );
+    const coincidePais = paisFiltro
+      ? normalizarTexto(plan.pais) === normalizarTexto(paisFiltro)
+      : true;
 
     return coincideNombre && coincidePais;
   });
