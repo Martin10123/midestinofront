@@ -1,7 +1,7 @@
 import axios from "axios";
 import toast from "react-hot-toast";
 import { PropTypes } from "prop-types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatearAMonedaColombia } from "../helpers/herramientas";
 import { borrar, comprar, editar, notfound } from "../images";
 import { urlGeneral } from "./../helpers/apiUrls";
@@ -15,6 +15,15 @@ export const TarjetaPlanes = ({
 }) => {
   const [modalResenasAbierto, setModalResenasAbierto] = useState(false);
   const [imagenError, setImagenError] = useState(false);
+  const [valoracion, setValoracion] = useState(
+    planEmpresa.valoracionPromedio || 0
+  );
+  const [totalResenas, setTotalResenas] = useState(
+    planEmpresa.totalResenas ??
+      planEmpresa.totalValoraciones ??
+      planEmpresa.numeroValoraciones ??
+      0
+  );
   
   const {
     abrirActActividad,
@@ -24,6 +33,21 @@ export const TarjetaPlanes = ({
     usuarioActivo,
     agregandoCarrito,
   } = useTarjetaPlanes({ planEmpresa, setPlanesEmpresa });
+
+  useEffect(() => {
+    setValoracion(planEmpresa.valoracionPromedio || 0);
+    setTotalResenas(
+      planEmpresa.totalResenas ??
+        planEmpresa.totalValoraciones ??
+        planEmpresa.numeroValoraciones ??
+        0
+    );
+  }, [
+    planEmpresa.valoracionPromedio,
+    planEmpresa.totalResenas,
+    planEmpresa.totalValoraciones,
+    planEmpresa.numeroValoraciones,
+  ]);
 
   const eliminarPlan = async () => {
     try {
@@ -91,8 +115,7 @@ export const TarjetaPlanes = ({
               
               <div className="flex items-center mb-3">
                 {Array.from({ length: 5 }).map((_, index) => {
-                  const rating = planEmpresa.valoracionPromedio || 0;
-                  const isFilled = rating > index;
+                  const isFilled = valoracion > index;
 
                   return (
                     <svg
@@ -110,7 +133,10 @@ export const TarjetaPlanes = ({
                   );
                 })}
                 <p className="ms-2 text-sm font-medium text-gray-700">
-                  {planEmpresa.valoracionPromedio?.toFixed(1) || "0.0"} de 5
+                  {valoracion.toFixed(1)} de 5
+                </p>
+                <p className="ms-2 text-xs text-gray-500">
+                  ({totalResenas} {totalResenas === 1 ? "reseña" : "reseñas"})
                 </p>
                 <button
                   onClick={() => setModalResenasAbierto(true)}
@@ -236,9 +262,14 @@ export const TarjetaPlanes = ({
 
       {/* Modal de reseñas */}
       {modalResenasAbierto && (
-        <ModalResenas 
-          planEmpresa={planEmpresa} 
-          onClose={() => setModalResenasAbierto(false)} 
+        <ModalResenas
+          planEmpresa={planEmpresa}
+          setPlanesEmpresa={setPlanesEmpresa}
+          onActualizarValoracion={(promedio, total) => {
+            setValoracion(promedio);
+            setTotalResenas(total);
+          }}
+          onClose={() => setModalResenasAbierto(false)}
         />
       )}
     </>

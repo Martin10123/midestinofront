@@ -1,7 +1,12 @@
 import { PropTypes } from "prop-types";
 import { useModalResenas } from "../hooks/useModalResenas";
 
-export const ModalResenas = ({ planEmpresa, onClose }) => {
+export const ModalResenas = ({
+  planEmpresa,
+  onClose,
+  setPlanesEmpresa,
+  onActualizarValoracion,
+}) => {
   const {
     resenas,
     puntuacionSeleccionada,
@@ -11,7 +16,12 @@ export const ModalResenas = ({ planEmpresa, onClose }) => {
     handleEnviarResena,
     cargando,
     usuarioActivo,
-  } = useModalResenas({ planEmpresa, onClose });
+  } = useModalResenas({
+    planEmpresa,
+    onClose,
+    setPlanesEmpresa,
+    onActualizarValoracion,
+  });
 
   if (!planEmpresa) return null;
 
@@ -26,10 +36,18 @@ export const ModalResenas = ({ planEmpresa, onClose }) => {
     });
   };
 
+  const promedioResenas = resenas.length
+    ? resenas.reduce(
+        (acumulado, resena) => acumulado + (Number(resena.puntuacion) || 0),
+        0
+      ) / resenas.length
+    : planEmpresa?.valoracionPromedio || 0;
+
+  const promedioMostrado = Number(promedioResenas.toFixed(1));
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
         <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
           <div className="flex justify-between items-start">
             <div className="flex-1">
@@ -39,8 +57,7 @@ export const ModalResenas = ({ planEmpresa, onClose }) => {
               <div className="flex items-center mt-2">
                 <div className="flex items-center">
                   {Array.from({ length: 5 }).map((_, index) => {
-                    const rating = planEmpresa.valoracionPromedio || 0;
-                    const isFilled = rating > index;
+                    const isFilled = promedioResenas > index;
                     return (
                       <svg
                         key={index}
@@ -58,10 +75,7 @@ export const ModalResenas = ({ planEmpresa, onClose }) => {
                   })}
                 </div>
                 <p className="ms-2 text-lg font-medium text-gray-700">
-                  {planEmpresa.valoracionPromedio
-                    ? planEmpresa.valoracionPromedio.toFixed(1)
-                    : "0.0"}{" "}
-                  de 5
+                  {promedioMostrado.toFixed(1)} de 5
                 </p>
                 <p className="ms-2 text-sm text-gray-500">
                   ({resenas.length}{" "}
@@ -90,16 +104,13 @@ export const ModalResenas = ({ planEmpresa, onClose }) => {
           </div>
         </div>
 
-        {/* Contenido scrolleable */}
         <div className="flex-1 overflow-y-auto p-6">
-          {/* Formulario para agregar reseña - Solo para clientes */}
           {usuarioActivo?.tipoUsuario === "Cliente" && (
             <div className="mb-6 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-200">
               <h3 className="text-lg font-semibold mb-3 text-blue-900">
                 Escribe tu reseña
               </h3>
 
-              {/* Selector de estrellas */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Tu calificación
@@ -137,7 +148,6 @@ export const ModalResenas = ({ planEmpresa, onClose }) => {
                 </div>
               </div>
 
-              {/* Campo de comentario */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Tu comentario (opcional)
@@ -151,7 +161,6 @@ export const ModalResenas = ({ planEmpresa, onClose }) => {
                 />
               </div>
 
-              {/* Botón de enviar */}
               <button
                 onClick={handleEnviarResena}
                 disabled={puntuacionSeleccionada === 0 || cargando}
@@ -176,7 +185,6 @@ export const ModalResenas = ({ planEmpresa, onClose }) => {
             </div>
           )}
 
-          {/* Lista de reseñas */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold mb-3 text-gray-800">
               Todas las reseñas
@@ -215,16 +223,23 @@ export const ModalResenas = ({ planEmpresa, onClose }) => {
                   key={resena.id}
                   className="p-4 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow bg-white"
                 >
+                  {console.log(resena)}
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
-                        {resena.nombreCliente 
+                        {resena.nombreCliente
                           ? resena.nombreCliente.charAt(0).toUpperCase()
+                          : resena.clienteNombre
+                          ? resena.clienteNombre.charAt(0).toUpperCase()
                           : "U"}
                       </div>
                       <div>
                         <p className="font-semibold text-gray-900">
-                          {resena.nombreCliente || `Usuario ${resena.clienteId}`}
+                          {resena.nombreCliente ||
+                            resena.clienteNombre ||
+                            resena.usuarioNombre ||
+                            resena.nombreUsuario ||
+                            `Usuario ${resena.clienteId}`}
                         </p>
                         <p className="text-xs text-gray-500">
                           {formatearFecha(resena.fecha)}
@@ -263,7 +278,6 @@ export const ModalResenas = ({ planEmpresa, onClose }) => {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="p-4 border-t border-gray-200 bg-gray-50">
           <button
             onClick={onClose}
@@ -280,4 +294,6 @@ export const ModalResenas = ({ planEmpresa, onClose }) => {
 ModalResenas.propTypes = {
   planEmpresa: PropTypes.object,
   onClose: PropTypes.func.isRequired,
+  setPlanesEmpresa: PropTypes.func,
+  onActualizarValoracion: PropTypes.func,
 };

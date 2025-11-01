@@ -9,7 +9,7 @@ export const ClientePagina = () => {
 
   // Estados para los filtros
   const [nombreFiltro, setNombreFiltro] = useState("");
-  const [paisFiltro, setPaisFiltro] = useState("");
+  const [ciudadFiltro, setCiudadFiltro] = useState("");
 
   const normalizarTexto = (valor = "") =>
     valor
@@ -20,15 +20,24 @@ export const ClientePagina = () => {
       .trim();
 
   // Filtrar planes en función de los filtros
+  const extraerCiudadPlan = (plan) => {
+    const ciudadCandidata =
+      plan?.ciudad ?? plan?.ciudadDestino ?? plan?.ubicacion;
+
+    return typeof ciudadCandidata === "string" ? ciudadCandidata : "";
+  };
+
   const planesFiltrados = planesEmpresas.filter((plan) => {
     const coincideNombre = normalizarTexto(plan.nombre).includes(
       normalizarTexto(nombreFiltro)
     );
-    const coincidePais = paisFiltro
-      ? normalizarTexto(plan.pais) === normalizarTexto(paisFiltro)
+
+    const ciudadPlan = extraerCiudadPlan(plan);
+    const coincideCiudad = ciudadFiltro
+      ? normalizarTexto(ciudadPlan) === normalizarTexto(ciudadFiltro)
       : true;
 
-    return coincideNombre && coincidePais;
+    return coincideNombre && coincideCiudad;
   });
 
   return (
@@ -52,8 +61,8 @@ export const ClientePagina = () => {
               Ciudad
             </label>
             <select
-              value={paisFiltro}
-              onChange={(e) => setPaisFiltro(e.target.value)}
+              value={ciudadFiltro}
+              onChange={(e) => setCiudadFiltro(e.target.value)}
               className="w-64 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
             >
               <option value="">Seleccione una ciudad</option>

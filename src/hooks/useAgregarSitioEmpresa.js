@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { urlGeneral } from "../helpers/apiUrls";
@@ -12,6 +12,7 @@ export const useAgregarSitioEmpresa = ({
 }) => {
   const { setPlanesEmpresa } = useContext(PlanesEmpresaContext);
   const { usuarioActivo } = useContext(UsuarioContext);
+  const [enviando, setEnviando] = useState(false);
   const { formState, onInputChange } = useForm({
     imagen: null,
     nombre: editData ? editData.nombre : "",
@@ -19,7 +20,7 @@ export const useAgregarSitioEmpresa = ({
     direccion: editData ? editData.direccion : "",
     horario: editData ? editData.horario : "9:00 AM - 10:00 PM",
     email: editData ? editData.email : "",
-    pais: editData ? editData.pais : "",
+    ciudad: editData ? editData.ciudad : "",
     metodosPagoAceptados: editData ? editData.metodosPagoAceptados : "",
     telefono: editData ? editData.telefono : "",
     precio: editData ? editData.precio : "",
@@ -65,8 +66,8 @@ export const useAgregarSitioEmpresa = ({
       toast.error("El precio debe ser un número mayor a 0.");
       return false;
     }
-    if (!formState.pais) {
-      toast.error("El país es obligatorio");
+    if (!formState.ciudad) {
+      toast.error("La ciudad es obligatoria");
       return false;
     }
     if (!formState.metodosPagoAceptados) {
@@ -103,6 +104,8 @@ export const useAgregarSitioEmpresa = ({
       return;
     }
 
+    setEnviando(true);
+
     const empresaActiva =
       (usuarioActivo && Object.keys(usuarioActivo).length > 0
         ? usuarioActivo
@@ -117,6 +120,7 @@ export const useAgregarSitioEmpresa = ({
       toast.error(
         "No fue posible identificar la empresa activa. Inicia sesión nuevamente."
       );
+      setEnviando(false);
       return;
     }
 
@@ -129,7 +133,7 @@ export const useAgregarSitioEmpresa = ({
       direccion: formState.direccion,
       horario: formState.horario,
       email: formState.email,
-      pais: formState.pais,
+      ciudad: formState.ciudad,
       metodosPagoAceptados: formState.metodosPagoAceptados,
       telefono: formState.telefono,
       precio: formState.precio,
@@ -158,7 +162,7 @@ export const useAgregarSitioEmpresa = ({
             direccion: formState.direccion,
             horario: formState.horario,
             email: formState.email,
-            pais: formState.pais,
+            ciudad: formState.ciudad,
             metodosPagoAceptados: formState.metodosPagoAceptados,
             telefono: formState.telefono,
             precio: formState.precio,
@@ -201,14 +205,23 @@ export const useAgregarSitioEmpresa = ({
         }
 
         handleAbrirModalCrearActividad();
+      } else {
+        const mensajeError =
+          response.data.message ||
+          "Ocurrió un error al guardar la actividad. Inténtalo nuevamente.";
+        toast.error(mensajeError);
       }
     } catch (error) {
       console.log("Error al enviar el formulario:", error);
       const mensajeError =
-        (error.response && error.response.data && error.response.data.message) ||
+        (error.response &&
+          error.response.data &&
+          error.response.data.message) ||
         error.message ||
         "Error al enviar el formulario. Inténtalo de nuevo.";
       toast.error(mensajeError);
+    } finally {
+      setEnviando(false);
     }
   };
 
@@ -221,5 +234,6 @@ export const useAgregarSitioEmpresa = ({
     formState,
     onInputChange,
     handleSubmit,
+    enviando,
   };
 };
